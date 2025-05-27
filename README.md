@@ -46,6 +46,18 @@ Start the daemon:
 touchgesture
 ```
 
+For verbose logging (useful for debugging):
+```bash
+touchgesture --verbose
+```
+
+The verbose mode will:
+- Log all input events
+- Show device capabilities
+- Display gesture recognition details
+- Log all action executions
+- Write logs to both console and `/tmp/touchgesture.log`
+
 ### Configuration
 
 The default configuration is installed at `/etc/touchgesture/default.yaml`. You can create a user-specific configuration at `~/.config/touchgesture/config.yaml`.
@@ -80,6 +92,11 @@ actions:
     type: "keyboard"
     in: "ctrl+plus"
     out: "ctrl+minus"
+
+# Debug settings
+debug:
+  enabled: false  # Set to true for persistent debug logging
+  log_file: "/var/log/touchgesture.log"
 ```
 
 ## Project Structure
