@@ -38,7 +38,7 @@ cp config/default.yaml /etc/touchgesture/
 
 # Install main script
 echo "Installing main script..."
-cp touchgesture.py /usr/local/bin/touchgesture
+ln -s touchgesture.py /usr/local/bin/touchgesture
 chmod +x /usr/local/bin/touchgesture
 
 # Setup input device permissions

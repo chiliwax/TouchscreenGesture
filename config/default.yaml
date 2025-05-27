@@ -2,7 +2,7 @@
 
 # Device configuration
 devices:
-  - name: "touchscreen"  # Will match any device with "touchscreen" in its name
+  - name: "raspberrypi-ts"  # Will match any device with "touchscreen" in its name
   # - event_id: 5  # Alternative: specific event ID
 
 # Gesture configurations
