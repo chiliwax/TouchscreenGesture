@@ -1,0 +1,75 @@
+TouchGesture: Configurable Touchscreen Gesture Detection for X11/Linux
+TouchGesture is a lightweight Python-based daemon designed to detect and respond to touchscreen gestures using the evdev interface under X11. It enables users to define custom gestures such as hold, pinch, or swipe and bind them to actions like right-click, keyboard shortcuts, or shell commands.
+
+The software is built with modularity and configurability in mind. It supports both system-wide and per-user configuration, enabling flexible deployment on shared or personal systems.
+
+It is especially useful in contexts where traditional input methods (like right-click on touchscreens) are limited or inconsistent.
+
+📦 Features Overview
+🔧 Configurability
+Select specific devices to monitor (by name or event ID)
+
+Enable or disable individual gestures
+
+Customize gesture properties: number of fingers, duration, direction, etc.
+
+Define action mappings (e.g. simulate mouse events or run scripts)
+
+🤏 Supported Gestures (initial version)
+Hold (e.g. one-finger hold = right-click)
+
+Pinch (in/out detection)
+
+Swipe and tap planned for future versions
+
+🎯 Supported Actions
+Simulate mouse events (left/right click, scroll, etc.)
+
+Simulate keypresses
+
+Run shell commands
+
+📁 Project Structure
+
+├── config/
+│   ├── default.yaml                # System-wide configuration (e.g. /etc/touchgesture/)
+│   └── users/
+│       └── user1.yaml              # User-specific configuration (~/.config/touchgesture/)
+├── gestures/
+│   ├── base.py                     # Base gesture detection class
+│   ├── hold.py                     # Logic for hold gesture
+│   └── pinch.py                    # Logic for pinch gesture
+├── input/
+│   └── listener.py                 # Monitors input events via evdev
+├── actions/
+│   └── right_click.py              # Performs associated actions (e.g. right-click)
+├── touchgesture.py                 # Main executable entry point
+├── install.sh                      # Installer script
+└── requirements.txt                # Python package dependencies
+🔄 Installation & Setup (via install.sh)
+The install.sh script:
+
+Installs dependencies (python3-evdev, xdotool, etc.)
+
+Optionally configures user permissions for /dev/input/event* (via group input)
+
+Places the main script in /usr/local/bin for global access
+
+Sets up config directories and default configs:
+
+/etc/touchgesture/default.yaml (system)
+
+~/.config/touchgesture/config.yaml (user)
+
+🧠 Runtime Behavior
+Parses system and user configuration files.
+
+Identifies and opens configured input devices via evdev.
+
+Continuously listens for input events.
+
+Recognizes gesture patterns (e.g. sustained hold, pinch start/end).
+
+When a gesture is recognized, triggers the corresponding action (e.g. simulate right-click).
+
+Logs or optionally prints debug information.

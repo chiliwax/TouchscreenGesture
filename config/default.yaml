@@ -1,0 +1,35 @@
+# Default system-wide configuration for TouchGesture
+
+# Device configuration
+devices:
+  - name: "touchscreen"  # Will match any device with "touchscreen" in its name
+  # - event_id: 5  # Alternative: specific event ID
+
+# Gesture configurations
+gestures:
+  hold:
+    enabled: true
+    fingers: 1
+    duration: 0.5  # seconds
+    action: "right_click"
+  
+  pinch:
+    enabled: true
+    action: "zoom"  # Will be mapped to Ctrl+Plus/Ctrl+Minus
+
+# Action mappings
+actions:
+  right_click:
+    type: "mouse"
+    button: "right"
+    event: "click"
+  
+  zoom:
+    type: "keyboard"
+    in: "ctrl+plus"
+    out: "ctrl+minus"
+
+# Debug settings
+debug:
+  enabled: false
+  log_file: "/var/log/touchgesture.log" 
