@@ -8,10 +8,10 @@ from gestures.pinch import PinchGesture
 
 class InputListener:
     def __init__(self, config_path: str, verbose: bool = False):
+        self.verbose = verbose
         self.config = self._load_config(config_path)
         self.devices: List[evdev.InputDevice] = []
         self.gestures = []
-        self.verbose = verbose
         self.setup_logging()
         self._setup_gestures()
         self._setup_devices()
