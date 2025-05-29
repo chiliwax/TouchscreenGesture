@@ -11,12 +11,11 @@ class HoldGesture(Gesture):
     def process_event(self, event_type: int, event_code: int, event_value: int) -> bool:
         # Track number of active fingers
         if event_code == 57:  # ABS_MT_TRACKING_ID
-            print(f"Event: {event_type}, {event_code}, {event_value}, {self.current_fingers}")
+            self.log_event(event_type, event_code, event_value)
             if event_value >= 0:  # Finger down
                 self.current_fingers += 1
                 if self.current_fingers == 1:
                     self.start_time = time.time()
-                    print(f"Start time: {self.start_time}")
             else:  # Finger up
                 self.current_fingers -= 1
                 if self.current_fingers == 0:
@@ -27,7 +26,8 @@ class HoldGesture(Gesture):
         if (self.current_fingers == self.required_fingers and 
             not self.is_active and 
             time.time() - self.start_time >= self.required_duration):
-            print(f"Hold duration met: {time.time() - self.start_time}")
+            hold_time = time.time() - self.start_time
+            self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
             self.is_active = True
             return True
 

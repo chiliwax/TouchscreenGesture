@@ -6,14 +6,15 @@ class PinchGesture(Gesture):
         super().__init__(config)
         self.initial_distance = 0
         self.current_distance = 0
-        self.threshold = 50  # Minimum distance change to trigger pinch
+        self.threshold = config.get('threshold', 50)  # Minimum distance change to trigger pinch
 
     def calculate_distance(self, point1: dict, point2: dict) -> float:
         """Calculate distance between two touch points"""
-        return math.sqrt(
+        distance = math.sqrt(
             (point1['x'] - point2['x']) ** 2 +
             (point1['y'] - point2['y']) ** 2
         )
+        return distance
 
     def process_event(self, event_type: int, event_code: int, event_value: int) -> bool:
         # Update touch point coordinates
@@ -23,6 +24,7 @@ class PinchGesture(Gesture):
             elif event_code == 54:  # ABS_MT_POSITION_Y
                 self.update_touch_point(0, self.get_touch_point(0)['x'], event_value, 0)
             elif event_code == 57:  # ABS_MT_TRACKING_ID
+                self.log_event(event_type, event_code, event_value)
                 if event_value >= 0:
                     if not self.is_active:
                         self.initial_distance = 0
@@ -37,9 +39,12 @@ class PinchGesture(Gesture):
             self.current_distance = self.calculate_distance(active_points[0], active_points[1])
             if self.initial_distance == 0:
                 self.initial_distance = self.current_distance
-            elif abs(self.current_distance - self.initial_distance) > self.threshold:
-                self.is_active = True
-                return True
+            else:
+                distance_change = abs(self.current_distance - self.initial_distance)
+                if distance_change > self.threshold:
+                    self.log_detection(distance_change=f"{distance_change:.2f}", threshold=self.threshold)
+                    self.is_active = True
+                    return True
 
         return False
 
