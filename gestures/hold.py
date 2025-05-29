@@ -16,6 +16,7 @@ class HoldGesture(Gesture):
                 self.current_fingers += 1
                 if self.current_fingers == 1:
                     self.start_time = time.time()
+                    print(f"Start time: {self.start_time}")
             else:  # Finger up
                 self.current_fingers -= 1
                 if self.current_fingers == 0:

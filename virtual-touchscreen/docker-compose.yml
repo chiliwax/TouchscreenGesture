@@ -1,0 +1,27 @@
+services:
+  virtual-touchscreen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - virtual_touchscreen_data:/tmp/virtual_touchscreen
+
+  # Example of a container that will use the virtual touchscreen
+  touchscreen-user:
+    build:
+      context: .
+      dockerfile: Dockerfile.user
+    volumes:
+      - virtual_touchscreen_data:/tmp/virtual_touchscreen
+
+  touch-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    volumes:
+      - virtual_touchscreen_data:/tmp/virtual_touchscreen
+
+volumes:
+  virtual_touchscreen_data:

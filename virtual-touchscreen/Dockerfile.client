@@ -1,0 +1,8 @@
+FROM python:3.9-slim
+
+# Copy the touch client script
+COPY touch_client.py /app/touch_client.py
+
+WORKDIR /app
+
+CMD ["python", "/app/touch_client.py"] 

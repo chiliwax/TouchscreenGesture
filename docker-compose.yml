@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  touchgesture:
+    build: .
+    privileged: true  # Required for input device access
+    environment:
+      - DISPLAY=:99
+    volumes:
+      - .:/app
+      - /dev/input:/dev/input:ro  # Mount input devices
+    ports:
+      - "5900:5900"  # VNC port
+    devices:
+      - /dev/input:/dev/input  # Mount input devices 
+  virtual-touchscreen:
+    build:
+      context: ./virtual-touchscreen
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    privileged: true
