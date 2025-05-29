@@ -5,7 +5,9 @@ import sys
 import argparse
 import logging
 from input.listener import InputListener
-import evdev
+from utils.logging_utils import setup_logging
+from utils.device_utils import list_devices
+
 def get_config_path():
     """Get the appropriate config file path"""
     # First try user config
@@ -25,40 +27,6 @@ def get_config_path():
     
     raise FileNotFoundError("No configuration file found")
 
-def setup_logging(verbose: bool):
-    """Setup logging configuration"""
-    log_format = '%(asctime)s - %(levelname)s - %(message)s'
-    if verbose:
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format=log_format,
-            handlers=[
-                logging.StreamHandler(),
-                logging.FileHandler('/tmp/touchgesture.log')
-            ]
-        )
-        logging.debug("Verbose logging enabled")
-    else:
-        logging.basicConfig(
-            level=logging.INFO,
-            format=log_format,
-            handlers=[logging.StreamHandler()]
-        )
-
-def list_devices(loggingState: bool = False):
-    if loggingState:
-        logging.info("Listing devices...")
-    else:
-        print("Listing devices...")
-    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-    if loggingState:
-        logging.info(f"Devices found: {devices}")
-    for device in devices:
-        if loggingState:
-            logging.info(f"Device: {device.path}, {device.name}, {device.phys}")
-        else:
-            print(f"Device: {device.path}, {device.name}, {device.phys}")
-
 def main():
     parser = argparse.ArgumentParser(description='TouchGesture - Touchscreen Gesture Detection')
     parser.add_argument('--config', '-c', help='Path to configuration file')
@@ -71,7 +39,7 @@ def main():
         return
 
     try:
-        setup_logging(args.verbose)
+        setup_logging(args.verbose, '/tmp/touchgesture.log')
         config_path = args.config if args.config else get_config_path()
         logging.info(f"Using configuration from: {config_path}")
 

@@ -5,6 +5,8 @@ import os
 import logging
 from gestures.hold import HoldGesture
 from gestures.pinch import PinchGesture
+from utils.logging_utils import setup_logging
+from utils.device_utils import find_device_by_name, find_device_by_id
 
 class InputListener:
     def __init__(self, config_path: str, verbose: bool = False):
@@ -12,7 +14,7 @@ class InputListener:
         self.config = self._load_config(config_path)
         self.devices: List[evdev.InputDevice] = []
         self.gestures = []
-        self.setup_logging()
+        self._setup_logging()
         self._setup_gestures()
         self._setup_devices()
 
@@ -24,17 +26,11 @@ class InputListener:
                 logging.debug(f"Loaded configuration: {config}")
             return config
 
-    def setup_logging(self):
+    def _setup_logging(self):
         """Setup logging configuration"""
         log_config = self.config.get('debug', {})
-        if self.verbose or log_config.get('enabled', False):
-            log_file = log_config.get('log_file', '/var/log/touchgesture.log')
-            logging.basicConfig(
-                filename=log_file,
-                level=logging.DEBUG,
-                format='%(asctime)s - %(levelname)s - %(message)s'
-            )
-            logging.debug("Debug logging enabled")
+        log_file = log_config.get('log_file', '/var/log/touchgesture.log')
+        setup_logging(self.verbose, log_file)
 
     def _setup_gestures(self):
         """Initialize gesture recognizers based on config"""
@@ -54,37 +50,13 @@ class InputListener:
         
         for device_config in device_configs:
             if 'name' in device_config:
-                self._find_device_by_name(device_config['name'])
+                device = find_device_by_name(device_config['name'], self.verbose)
+                if device:
+                    self.devices.append(device)
             elif 'event_id' in device_config:
-                self._find_device_by_id(device_config['event_id'])
-
-    def _find_device_by_name(self, name: str):
-        """Find input device by name pattern"""
-        for device in evdev.list_devices():
-            try:
-                dev = evdev.InputDevice(device)
-                if name.lower() in dev.name.lower():
-                    self.devices.append(dev)
-                    logging.info(f"Found device: {dev.name}")
-                    if self.verbose:
-                        logging.debug(f"Device capabilities: {dev.capabilities()}")
-            except Exception as e:
-                if self.verbose:
-                    logging.debug(f"Failed to open device {device}: {e}")
-                continue
-
-    def _find_device_by_id(self, event_id: int):
-        """Find input device by event ID"""
-        try:
-            dev = evdev.InputDevice(f"/dev/input/event{event_id}")
-            self.devices.append(dev)
-            logging.info(f"Found device: {dev.name}")
-            if self.verbose:
-                logging.debug(f"Device capabilities: {dev.capabilities()}")
-        except Exception as e:
-            logging.error(f"Could not find device with event ID: {event_id}")
-            if self.verbose:
-                logging.debug(f"Error details: {e}")
+                device = find_device_by_id(device_config['event_id'], self.verbose)
+                if device:
+                    self.devices.append(device)
 
     def start(self):
         """Start listening for input events"""
