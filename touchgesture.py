@@ -46,9 +46,13 @@ def setup_logging(verbose: bool):
         )
 
 def list_devices(logging: bool = False):
-    logging.info("Listing devices...")
+    if logging:
+        logging.info("Listing devices...")
+    else:
+        print("Listing devices...")
     devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-    logging.info(f"Devices found: {devices}")
+    if logging:
+        logging.info(f"Devices found: {devices}")
     for device in devices:
         if logging:
             logging.info(f"Device: {device.path}, {device.name}, {device.phys}")
