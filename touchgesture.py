@@ -45,25 +45,34 @@ def setup_logging(verbose: bool):
             handlers=[logging.StreamHandler()]
         )
 
-def list_devices():
+def list_devices(logging: bool = False):
     logging.info("Listing devices...")
     devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
     logging.info(f"Devices found: {devices}")
     for device in devices:
-        logging.info(f"Device: {device.path}, {device.name}, {device.phys}")
+        if logging:
+            logging.info(f"Device: {device.path}, {device.name}, {device.phys}")
+        else:
+            print(f"Device: {device.path}, {device.name}, {device.phys}")
 
 def main():
     parser = argparse.ArgumentParser(description='TouchGesture - Touchscreen Gesture Detection')
     parser.add_argument('--config', '-c', help='Path to configuration file')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
+    parser.add_argument('--list-devices', '-ls', action='store_true', help='list devices')
     args = parser.parse_args()
+
+    if args.list_devices:
+        list_devices(args.verbose)
+        return
 
     try:
         setup_logging(args.verbose)
         config_path = args.config if args.config else get_config_path()
         logging.info(f"Using configuration from: {config_path}")
 
-        list_devices()
+        if args.verbose:
+            list_devices(args.verbose)
         
         listener = InputListener(config_path, verbose=args.verbose)
         logging.info("Starting TouchGesture daemon...")
