@@ -37,6 +37,7 @@ class HoldGesture(Gesture):
             if (self.current_fingers == self.required_fingers and 
                 not self.is_active and 
                 hold_time >= self.required_duration):
+                logging.info(f"{self.name} - ❤️ - Hold duration met: {hold_time:.2f}s")
                 self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
                 self.is_active = True
                 return True
