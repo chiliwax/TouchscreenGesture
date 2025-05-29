@@ -45,16 +45,16 @@ def setup_logging(verbose: bool):
             handlers=[logging.StreamHandler()]
         )
 
-def list_devices(logging: bool = False):
-    if logging:
+def list_devices(loggingState: bool = False):
+    if loggingState:
         logging.info("Listing devices...")
     else:
         print("Listing devices...")
     devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-    if logging:
+    if loggingState:
         logging.info(f"Devices found: {devices}")
     for device in devices:
-        if logging:
+        if loggingState:
             logging.info(f"Device: {device.path}, {device.name}, {device.phys}")
         else:
             print(f"Device: {device.path}, {device.name}, {device.phys}")
