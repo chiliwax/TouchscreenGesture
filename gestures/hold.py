@@ -11,7 +11,7 @@ class HoldGesture(Gesture):
     def process_event(self, event_type: int, event_code: int, event_value: int) -> bool:
         # Track number of active fingers
         if event_code == 57:  # ABS_MT_TRACKING_ID
-            #self.log_event(event_type, event_code, event_value)
+            self.log_event(event_type, event_code, event_value)
             if event_value >= 0:  # Finger down
                 self.current_fingers += 1
                 if self.current_fingers == 1:
