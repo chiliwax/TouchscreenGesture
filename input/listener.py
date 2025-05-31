@@ -146,10 +146,8 @@ class InputListener:
             if self.verbose and old_count != self.total_active_fingers:
                 logging.debug(f"Total active fingers: {old_count} → {self.total_active_fingers}")
             
-            # Schedule ungrab if no fingers remain and devices are grabbed
-            # (but only if there's no pending action ungrab)
-            if (self.total_active_fingers == 0 and self.device_grabbed and 
-                self.grab_timeout_timer is None):
+            # Schedule ungrab when no fingers remain and devices are grabbed
+            if self.total_active_fingers == 0 and self.device_grabbed:
                 self._schedule_ungrab()
 
     def _process_event(self, event):
@@ -241,8 +239,10 @@ class InputListener:
         except Exception as e:
             logging.error(f"Error executing action {action_name}: {e}")
         finally:
-            # Always schedule ungrab after action, regardless of finger count
-            self._schedule_ungrab_after_action()
+            # Don't ungrab immediately - wait for fingers to be released
+            # The ungrab will happen automatically when finger count reaches 0
+            if self.verbose:
+                logging.debug("Action completed, will ungrab when fingers are released")
 
     def _schedule_ungrab_after_action(self):
         """Schedule device ungrab after action"""
