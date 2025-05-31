@@ -101,6 +101,9 @@ class InputListener:
                 self.device_grabbed = True
                 if self.verbose:
                     logging.debug("Grabbed input devices to prevent interference")
+                
+                # Safety ungrab after 5 seconds to prevent permanent grab
+                self._schedule_safety_ungrab()
             except Exception as e:
                 logging.warning(f"Failed to grab devices: {e}")
 
@@ -126,11 +129,10 @@ class InputListener:
         """Schedule device ungrab after a short delay"""
         import threading
         self._cancel_ungrab_timer()
-        if self.total_active_fingers == 0:
-            self.grab_timeout_timer = threading.Timer(delay, self._ungrab_devices)
-            self.grab_timeout_timer.start()
-            if self.verbose:
-                logging.debug(f"Scheduled device ungrab in {delay}s")
+        self.grab_timeout_timer = threading.Timer(delay, self._ungrab_devices)
+        self.grab_timeout_timer.start()
+        if self.verbose:
+            logging.debug(f"Scheduled device ungrab in {delay}s")
 
     def _update_finger_count(self, event):
         """Track total active fingers across all devices"""
@@ -144,8 +146,10 @@ class InputListener:
             if self.verbose and old_count != self.total_active_fingers:
                 logging.debug(f"Total active fingers: {old_count} → {self.total_active_fingers}")
             
-            # Schedule ungrab if no fingers remain
-            if self.total_active_fingers == 0 and self.device_grabbed:
+            # Schedule ungrab if no fingers remain and devices are grabbed
+            # (but only if there's no pending action ungrab)
+            if (self.total_active_fingers == 0 and self.device_grabbed and 
+                self.grab_timeout_timer is None):
                 self._schedule_ungrab()
 
     def _process_event(self, event):
@@ -231,5 +235,33 @@ class InputListener:
         # Grab devices to prevent interference
         self._grab_devices()
         
-        # Trigger the action
-        self._trigger_action(action_name) 
+        try:
+            # Trigger the action
+            self._trigger_action(action_name)
+        except Exception as e:
+            logging.error(f"Error executing action {action_name}: {e}")
+        finally:
+            # Always schedule ungrab after action, regardless of finger count
+            self._schedule_ungrab_after_action()
+
+    def _schedule_ungrab_after_action(self):
+        """Schedule device ungrab after action"""
+        import threading
+        self._cancel_ungrab_timer()
+        # Use a shorter delay for post-action ungrab to ensure responsiveness
+        self.grab_timeout_timer = threading.Timer(0.05, self._ungrab_devices)
+        self.grab_timeout_timer.start()
+        if self.verbose:
+            logging.debug("Scheduled device ungrab after action in 0.05s")
+
+    def _schedule_safety_ungrab(self):
+        """Schedule a safety ungrab after 5 seconds to prevent permanent device grab"""
+        import threading
+        def safety_ungrab():
+            if self.device_grabbed:
+                logging.warning("Safety ungrab triggered - devices were grabbed for too long")
+                self._ungrab_devices()
+        
+        safety_timer = threading.Timer(5.0, safety_ungrab)
+        safety_timer.daemon = True  # Don't prevent program exit
+        safety_timer.start() 
