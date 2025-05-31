@@ -8,11 +8,25 @@ class HoldGesture(Gesture):
         super().__init__(config)
         self.required_fingers = config.get('fingers', 1)
         self.required_duration = config.get('duration', 0.5)
+        self.movement_tolerance = config.get('movement_tolerance', 20)  # pixels
         self.current_fingers = 0
         self.hold_timer = None
         self.hold_timer_lock = threading.Lock()
         self.gesture_triggered = False
+        self.initial_position = None
+        self.current_position = None
         logging.debug(f"{self.name} - Action configured: {self.action}")
+        logging.debug(f"{self.name} - Movement tolerance: {self.movement_tolerance}px")
+
+    def calculate_movement_distance(self):
+        """Calculate the distance moved from initial touch position"""
+        if not self.initial_position or not self.current_position:
+            return 0
+        
+        dx = self.current_position['x'] - self.initial_position['x']
+        dy = self.current_position['y'] - self.initial_position['y']
+        distance = (dx ** 2 + dy ** 2) ** 0.5
+        return distance
 
     def start_hold_timer(self):
         with self.hold_timer_lock:
@@ -32,10 +46,18 @@ class HoldGesture(Gesture):
         with self.hold_timer_lock:
             if (self.current_fingers == self.required_fingers and 
                 not self.is_active and not self.gesture_triggered):
+                
+                # Check if movement exceeds tolerance
+                movement_distance = self.calculate_movement_distance()
+                if movement_distance > self.movement_tolerance:
+                    logging.debug(f"{self.name} - Hold cancelled: movement {movement_distance:.1f}px > {self.movement_tolerance}px tolerance")
+                    self.stop_hold_timer()
+                    return False
+                
                 hold_time = time.time() - self.start_time
                 if hold_time >= self.required_duration:
-                    logging.info(f"{self.name} - ❤️ - Hold duration met: {hold_time:.2f}s")
-                    self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
+                    logging.info(f"{self.name} - ❤️ - Hold duration met: {hold_time:.2f}s (movement: {movement_distance:.1f}px)")
+                    self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers, movement=f"{movement_distance:.1f}px")
                     self.is_active = True
                     self.gesture_triggered = True
                     logging.debug(f"{self.name} - Gesture active, will trigger action: {self.action}")
@@ -45,6 +67,33 @@ class HoldGesture(Gesture):
         return False
 
     def process_event(self, event_type: int, event_code: int, event_value: int) -> bool:
+        # Track position updates
+        if event_type == 3:  # EV_ABS
+            if event_code == 53:  # ABS_MT_POSITION_X
+                if self.current_position is None:
+                    self.current_position = {'x': event_value, 'y': 0}
+                else:
+                    self.current_position['x'] = event_value
+                # Check movement during hold period
+                if self.hold_timer and self.initial_position:
+                    movement_distance = self.calculate_movement_distance()
+                    if movement_distance > self.movement_tolerance:
+                        logging.debug(f"{self.name} - Hold cancelled during movement: {movement_distance:.1f}px > {self.movement_tolerance}px")
+                        self.stop_hold_timer()
+                        return False
+            elif event_code == 54:  # ABS_MT_POSITION_Y
+                if self.current_position is None:
+                    self.current_position = {'x': 0, 'y': event_value}
+                else:
+                    self.current_position['y'] = event_value
+                # Check movement during hold period
+                if self.hold_timer and self.initial_position:
+                    movement_distance = self.calculate_movement_distance()
+                    if movement_distance > self.movement_tolerance:
+                        logging.debug(f"{self.name} - Hold cancelled during movement: {movement_distance:.1f}px > {self.movement_tolerance}px")
+                        self.stop_hold_timer()
+                        return False
+        
         # Track number of active fingers
         if event_code == 57:  # ABS_MT_TRACKING_ID
             self.log_event(event_type, event_code, event_value)
@@ -53,13 +102,16 @@ class HoldGesture(Gesture):
                 logging.debug(f"{self.name} - Finger down: total_fingers={self.current_fingers}")
                 if self.current_fingers == 1:
                     self.start_time = time.time()
+                    self.initial_position = self.current_position.copy() if self.current_position else None
+                    logging.debug(f"{self.name} - Initial position: {self.initial_position}")
                     self.start_hold_timer()
             else:  # Finger up
                 self.current_fingers -= 1
                 logging.debug(f"{self.name} - Finger up: total_fingers={self.current_fingers}")
                 if self.current_fingers == 0:
                     hold_time = time.time() - self.start_time
-                    logging.debug(f"{self.name} - All fingers lifted after {hold_time:.2f}s")
+                    movement_distance = self.calculate_movement_distance()
+                    logging.debug(f"{self.name} - All fingers lifted after {hold_time:.2f}s (movement: {movement_distance:.1f}px)")
                     self.stop_hold_timer()
                     self.reset()
                     return False
@@ -71,4 +123,6 @@ class HoldGesture(Gesture):
         super().reset()
         self.current_fingers = 0
         self.gesture_triggered = False
+        self.initial_position = None
+        self.current_position = None
         self.stop_hold_timer() 

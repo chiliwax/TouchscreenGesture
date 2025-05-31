@@ -11,6 +11,7 @@ gestures:
     enabled: true
     fingers: 1
     duration: 0.5  # seconds
+    movement_tolerance: 20  # pixels - maximum allowed movement during hold
     action: "right_click"
   
   pinch:
