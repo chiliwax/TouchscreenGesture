@@ -148,7 +148,15 @@ class InputListener:
             
             # Schedule ungrab when no fingers remain and devices are grabbed
             if self.total_active_fingers == 0 and self.device_grabbed:
+                if self.verbose:
+                    logging.debug(f"All fingers lifted, scheduling ungrab (device_grabbed={self.device_grabbed})")
                 self._schedule_ungrab()
+            elif self.total_active_fingers == 0 and not self.device_grabbed:
+                if self.verbose:
+                    logging.debug(f"All fingers lifted, but devices not grabbed")
+            elif self.total_active_fingers > 0 and self.device_grabbed:
+                if self.verbose:
+                    logging.debug(f"Still {self.total_active_fingers} fingers down, keeping devices grabbed")
 
     def _process_event(self, event):
         """Process an input event through all gesture recognizers"""
@@ -163,7 +171,8 @@ class InputListener:
                     logging.debug(f"Gesture recognized: {gesture.__class__.__name__}")
                     logging.debug(f"Action to trigger: {gesture.action}")
                 self._trigger_action(gesture.action)
-                gesture.reset()
+                # Don't reset gesture immediately - let it handle its own lifecycle
+                # gesture.reset() - Removed to prevent interference with finger tracking
 
     def _trigger_action(self, action_name: str):
         """Trigger the configured action"""
