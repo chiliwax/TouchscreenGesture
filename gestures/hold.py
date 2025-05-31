@@ -15,6 +15,7 @@ class HoldGesture(Gesture):
         self.gesture_triggered = False
         self.initial_position = None
         self.current_position = None
+        self.waiting_for_initial_position = False
         logging.debug(f"{self.name} - Action configured: {self.action}")
         logging.debug(f"{self.name} - Movement tolerance: {self.movement_tolerance}px")
 
@@ -74,6 +75,13 @@ class HoldGesture(Gesture):
                     self.current_position = {'x': event_value, 'y': 0}
                 else:
                     self.current_position['x'] = event_value
+                
+                # Set initial position if we're waiting for it
+                if self.waiting_for_initial_position and self.current_position['y'] != 0:
+                    self.initial_position = self.current_position.copy()
+                    self.waiting_for_initial_position = False
+                    logging.debug(f"{self.name} - Initial position set: {self.initial_position}")
+                
                 # Check movement during hold period
                 if self.hold_timer and self.initial_position:
                     movement_distance = self.calculate_movement_distance()
@@ -81,11 +89,19 @@ class HoldGesture(Gesture):
                         logging.debug(f"{self.name} - Hold cancelled during movement: {movement_distance:.1f}px > {self.movement_tolerance}px")
                         self.stop_hold_timer()
                         return False
+                        
             elif event_code == 54:  # ABS_MT_POSITION_Y
                 if self.current_position is None:
                     self.current_position = {'x': 0, 'y': event_value}
                 else:
                     self.current_position['y'] = event_value
+                
+                # Set initial position if we're waiting for it
+                if self.waiting_for_initial_position and self.current_position['x'] != 0:
+                    self.initial_position = self.current_position.copy()
+                    self.waiting_for_initial_position = False
+                    logging.debug(f"{self.name} - Initial position set: {self.initial_position}")
+                
                 # Check movement during hold period
                 if self.hold_timer and self.initial_position:
                     movement_distance = self.calculate_movement_distance()
@@ -102,8 +118,10 @@ class HoldGesture(Gesture):
                 logging.debug(f"{self.name} - Finger down: total_fingers={self.current_fingers}")
                 if self.current_fingers == 1:
                     self.start_time = time.time()
-                    self.initial_position = self.current_position.copy() if self.current_position else None
-                    logging.debug(f"{self.name} - Initial position: {self.initial_position}")
+                    # Mark that we're waiting for the first position update
+                    self.waiting_for_initial_position = True
+                    self.initial_position = None
+                    logging.debug(f"{self.name} - Waiting for initial position...")
                     self.start_hold_timer()
             else:  # Finger up
                 self.current_fingers -= 1
@@ -125,4 +143,5 @@ class HoldGesture(Gesture):
         self.gesture_triggered = False
         self.initial_position = None
         self.current_position = None
+        self.waiting_for_initial_position = False
         self.stop_hold_timer() 
