@@ -154,6 +154,7 @@ class InputListener:
             elif self.total_active_fingers == 0 and not self.device_grabbed:
                 if self.verbose:
                     logging.debug(f"All fingers lifted, but devices not grabbed")
+                self._schedule_ungrab()
             elif self.total_active_fingers > 0 and self.device_grabbed:
                 if self.verbose:
                     logging.debug(f"Still {self.total_active_fingers} fingers down, keeping devices grabbed")
