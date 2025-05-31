@@ -36,6 +36,8 @@ class HoldGesture(Gesture):
                 self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
                 self.is_active = True
                 logging.debug(f"{self.name} - Gesture active, will trigger action: {self.action}")
+                return True
+        return False
 
     def process_event(self, event_type: int, event_code: int, event_value: int) -> bool:
         # Track number of active fingers
@@ -57,9 +59,8 @@ class HoldGesture(Gesture):
                     self.reset()
                     return False
 
-        # Return True if the gesture is active and we haven't triggered the action yet
-        if self.is_active:
-            self.is_active = False  # Reset the active state so we don't trigger multiple times
+        # Check if hold duration was met
+        if self.check_hold_duration():
             return True
 
         return False
