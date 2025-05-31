@@ -11,6 +11,7 @@ class HoldGesture(Gesture):
         self.current_fingers = 0
         self.hold_timer = None
         self.hold_timer_lock = threading.Lock()
+        logging.debug(f"{self.name} - Action configured: {self.action}")
 
     def start_hold_timer(self):
         with self.hold_timer_lock:
@@ -34,6 +35,7 @@ class HoldGesture(Gesture):
                 logging.info(f"{self.name} - ❤️ - Hold duration met: {hold_time:.2f}s")
                 self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
                 self.is_active = True
+                logging.debug(f"{self.name} - Gesture active, will trigger action: {self.action}")
 
     def process_event(self, event_type: int, event_code: int, event_value: int) -> bool:
         # Track number of active fingers
