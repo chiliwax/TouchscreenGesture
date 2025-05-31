@@ -34,7 +34,6 @@ class HoldGesture(Gesture):
                 logging.info(f"{self.name} - ❤️ - Hold duration met: {hold_time:.2f}s")
                 self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
                 self.is_active = True
-                self.trigger_action()
 
     def process_event(self, event_type: int, event_code: int, event_value: int) -> bool:
         # Track number of active fingers
