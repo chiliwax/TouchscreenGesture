@@ -66,6 +66,8 @@ class HoldGesture(Gesture):
                     logging.debug(f"{self.name} - Gesture active, will trigger action: {self.action}")
                     # Trigger the gesture immediately via callback
                     self.trigger_gesture()
+                    # Clear start_time after successful gesture to prevent race conditions
+                    self.start_time = None
                     return True
         return False
 
@@ -132,9 +134,17 @@ class HoldGesture(Gesture):
                     logging.debug(f"{self.name} - Removed position data for slot {self.current_slot}")
                 
                 if self.current_fingers == 0:
-                    hold_time = time.time() - self.start_time
+                    # Calculate hold time only if we have a valid start_time from current session
+                    if hasattr(self, 'start_time') and self.start_time:
+                        hold_time = time.time() - self.start_time
+                        logging.debug(f"{self.name} - All fingers lifted after {hold_time:.2f}s")
+                    else:
+                        logging.debug(f"{self.name} - All fingers lifted (no timing available)")
+                    
                     movement_distance = self.calculate_max_movement_distance()
-                    logging.debug(f"{self.name} - All fingers lifted after {hold_time:.2f}s (max movement: {movement_distance:.1f}px)")
+                    if movement_distance > 0:
+                        logging.debug(f"{self.name} - Max movement: {movement_distance:.1f}px")
+                    
                     self.stop_hold_timer()
                     self.reset()
                     return False
@@ -159,4 +169,5 @@ class HoldGesture(Gesture):
         self.gesture_triggered = False
         self.finger_positions = {}
         self.current_slot = 0
+        self.start_time = None  # Clear start_time to prevent timing issues
         self.stop_hold_timer() 
