@@ -60,10 +60,14 @@ class HoldGesture(Gesture):
                     self.reset()
                     return False
 
-        # Only return True if the gesture is active
+        # Check if the hold duration was met
         if self.is_active:
             self.is_active = False  # Reset the active state so we don't trigger multiple times
             return True
+
+        # Check if we should start the hold timer
+        if self.current_fingers == self.required_fingers and not self.hold_timer:
+            self.start_hold_timer()
 
         return False
 
