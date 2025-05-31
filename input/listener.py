@@ -37,11 +37,15 @@ class InputListener:
         gesture_configs = self.config.get('gestures', {})
         
         if gesture_configs.get('hold', {}).get('enabled', False):
-            self.gestures.append(HoldGesture(gesture_configs['hold']))
+            hold_gesture = HoldGesture(gesture_configs['hold'])
+            hold_gesture.set_gesture_callback(self._on_gesture_detected)
+            self.gestures.append(hold_gesture)
             logging.debug("Hold gesture enabled")
         
         if gesture_configs.get('pinch', {}).get('enabled', False):
-            self.gestures.append(PinchGesture(gesture_configs['pinch']))
+            pinch_gesture = PinchGesture(gesture_configs['pinch'])
+            pinch_gesture.set_gesture_callback(self._on_gesture_detected)
+            self.gestures.append(pinch_gesture)
             logging.debug("Pinch gesture enabled")
 
     def _setup_devices(self):
@@ -152,4 +156,10 @@ class InputListener:
         if command:
             if self.verbose:
                 logging.debug(f"Executing shell command: {command}")
-            subprocess.run(command, shell=True) 
+            subprocess.run(command, shell=True)
+
+    def _on_gesture_detected(self, action_name: str):
+        """Handle gesture detection callback"""
+        if self.verbose:
+            logging.debug(f"Gesture callback received for action: {action_name}")
+        self._trigger_action(action_name) 

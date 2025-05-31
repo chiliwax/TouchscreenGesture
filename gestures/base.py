@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Callable, Optional
 import time
 import logging
 
@@ -12,7 +12,18 @@ class Gesture(ABC):
         self.start_time = 0
         self.is_active = False
         self.name = self.__class__.__name__
+        self.gesture_callback: Optional[Callable[[str], None]] = None
         logging.debug(f"{self.name} initialized with config: {config}")
+
+    def set_gesture_callback(self, callback: Callable[[str], None]):
+        """Set the callback function to notify when gesture is detected"""
+        self.gesture_callback = callback
+
+    def trigger_gesture(self):
+        """Notify the listener that this gesture has been detected"""
+        if self.gesture_callback and self.action:
+            logging.debug(f"{self.name} - Triggering gesture callback for action: {self.action}")
+            self.gesture_callback(self.action)
 
     @abstractmethod
     def process_event(self, event_type: int, event_code: int, event_value: int) -> bool:

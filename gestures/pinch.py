@@ -44,6 +44,8 @@ class PinchGesture(Gesture):
                 if distance_change > self.threshold:
                     self.log_detection(distance_change=f"{distance_change:.2f}", threshold=self.threshold)
                     self.is_active = True
+                    # Trigger the gesture immediately via callback
+                    self.trigger_gesture()
                     return True
 
         return False

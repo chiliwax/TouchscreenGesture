@@ -37,6 +37,8 @@ class HoldGesture(Gesture):
                     self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
                     self.is_active = True
                     logging.debug(f"{self.name} - Gesture active, will trigger action: {self.action}")
+                    # Trigger the gesture immediately via callback
+                    self.trigger_gesture()
                     return True
         return False
 
@@ -60,15 +62,7 @@ class HoldGesture(Gesture):
                     self.reset()
                     return False
 
-        # Check if the hold duration was met
-        if self.is_active:
-            self.is_active = False  # Reset the active state so we don't trigger multiple times
-            return True
-
-        # Check if we should start the hold timer
-        if self.current_fingers == self.required_fingers and not self.hold_timer:
-            self.start_hold_timer()
-
+        # No longer need to check is_active here since we use callbacks
         return False
 
     def reset(self):
