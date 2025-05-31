@@ -9,7 +9,7 @@ devices:
 gestures:
   hold:
     enabled: true
-    fingers: 1
+    fingers: 2  # Test with 2 fingers
     duration: 0.5  # seconds
     movement_tolerance: 20  # pixels - maximum allowed movement during hold
     action: "right_click"
