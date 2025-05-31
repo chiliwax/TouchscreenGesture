@@ -85,14 +85,19 @@ class InputListener:
     def _process_event(self, event):
         """Process an input event through all gesture recognizers"""
         for gesture in self.gestures:
+            if self.verbose:
+                logging.debug(f"Processing event for {gesture.__class__.__name__}")
             if gesture.process_event(event.type, event.code, event.value):
                 if self.verbose:
                     logging.debug(f"Gesture recognized: {gesture.__class__.__name__}")
+                    logging.debug(f"Action to trigger: {gesture.action}")
                 self._trigger_action(gesture.action)
                 gesture.reset()
 
     def _trigger_action(self, action_name: str):
         """Trigger the configured action"""
+        if self.verbose:
+            logging.debug(f"Looking up action: {action_name}")
         action_config = self.config.get('actions', {}).get(action_name)
         if not action_config:
             if self.verbose:
@@ -102,6 +107,7 @@ class InputListener:
         action_type = action_config.get('type')
         if self.verbose:
             logging.debug(f"Triggering action: {action_name} (type: {action_type})")
+            logging.debug(f"Action config: {action_config}")
 
         if action_type == 'mouse':
             self._trigger_mouse_action(action_config)
@@ -109,6 +115,9 @@ class InputListener:
             self._trigger_keyboard_action(action_config)
         elif action_type == 'command':
             self._trigger_command_action(action_config)
+        else:
+            if self.verbose:
+                logging.debug(f"Unknown action type: {action_type}")
 
     def _trigger_mouse_action(self, config: Dict[str, Any]):
         """Trigger a mouse action using xdotool"""
@@ -118,7 +127,14 @@ class InputListener:
         cmd = ['xdotool', f'mouse{event}', button]
         if self.verbose:
             logging.debug(f"Executing mouse command: {' '.join(cmd)}")
-        subprocess.run(cmd)
+        try:
+            subprocess.run(cmd, check=True)
+            if self.verbose:
+                logging.debug("Mouse command executed successfully")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to execute mouse command: {e}")
+        except Exception as e:
+            logging.error(f"Unexpected error executing mouse command: {e}")
 
     def _trigger_keyboard_action(self, config: Dict[str, Any]):
         """Trigger a keyboard action using xdotool"""
