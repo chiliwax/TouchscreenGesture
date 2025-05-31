@@ -11,6 +11,7 @@ class HoldGesture(Gesture):
         self.current_fingers = 0
         self.hold_timer = None
         self.hold_timer_lock = threading.Lock()
+        self.gesture_triggered = False
         logging.debug(f"{self.name} - Action configured: {self.action}")
 
     def start_hold_timer(self):
@@ -30,12 +31,13 @@ class HoldGesture(Gesture):
     def check_hold_duration(self):
         with self.hold_timer_lock:
             if (self.current_fingers == self.required_fingers and 
-                not self.is_active):
+                not self.is_active and not self.gesture_triggered):
                 hold_time = time.time() - self.start_time
                 if hold_time >= self.required_duration:
                     logging.info(f"{self.name} - ❤️ - Hold duration met: {hold_time:.2f}s")
                     self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
                     self.is_active = True
+                    self.gesture_triggered = True
                     logging.debug(f"{self.name} - Gesture active, will trigger action: {self.action}")
                     # Trigger the gesture immediately via callback
                     self.trigger_gesture()
@@ -68,4 +70,5 @@ class HoldGesture(Gesture):
     def reset(self):
         super().reset()
         self.current_fingers = 0
+        self.gesture_triggered = False
         self.stop_hold_timer() 

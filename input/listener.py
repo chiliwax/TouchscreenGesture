@@ -14,6 +14,9 @@ class InputListener:
         self.config = self._load_config(config_path)
         self.devices: List[evdev.InputDevice] = []
         self.gestures = []
+        self.total_active_fingers = 0
+        self.device_grabbed = False
+        self.grab_timeout_timer = None
         self._setup_logging()
         self._setup_gestures()
         self._setup_devices()
@@ -82,12 +85,74 @@ class InputListener:
         except KeyboardInterrupt:
             logging.info("Stopping input listener")
         finally:
+            # Clean up
+            self._cancel_ungrab_timer()
+            self._ungrab_devices()
             for device in self.devices:
                 device.close()
                 logging.debug(f"Closed device: {device.name}")
 
+    def _grab_devices(self):
+        """Grab all input devices to prevent system interference"""
+        if not self.device_grabbed:
+            try:
+                for device in self.devices:
+                    device.grab()
+                self.device_grabbed = True
+                if self.verbose:
+                    logging.debug("Grabbed input devices to prevent interference")
+            except Exception as e:
+                logging.warning(f"Failed to grab devices: {e}")
+
+    def _ungrab_devices(self):
+        """Release device grab"""
+        if self.device_grabbed:
+            try:
+                for device in self.devices:
+                    device.ungrab()
+                self.device_grabbed = False
+                if self.verbose:
+                    logging.debug("Released device grab")
+            except Exception as e:
+                logging.warning(f"Failed to ungrab devices: {e}")
+
+    def _cancel_ungrab_timer(self):
+        """Cancel any pending ungrab timer"""
+        if self.grab_timeout_timer:
+            self.grab_timeout_timer.cancel()
+            self.grab_timeout_timer = None
+
+    def _schedule_ungrab(self, delay=0.1):
+        """Schedule device ungrab after a short delay"""
+        import threading
+        self._cancel_ungrab_timer()
+        if self.total_active_fingers == 0:
+            self.grab_timeout_timer = threading.Timer(delay, self._ungrab_devices)
+            self.grab_timeout_timer.start()
+            if self.verbose:
+                logging.debug(f"Scheduled device ungrab in {delay}s")
+
+    def _update_finger_count(self, event):
+        """Track total active fingers across all devices"""
+        if event.code == 57:  # ABS_MT_TRACKING_ID
+            old_count = self.total_active_fingers
+            if event.value >= 0:  # Finger down
+                self.total_active_fingers += 1
+            else:  # Finger up
+                self.total_active_fingers = max(0, self.total_active_fingers - 1)
+            
+            if self.verbose and old_count != self.total_active_fingers:
+                logging.debug(f"Total active fingers: {old_count} → {self.total_active_fingers}")
+            
+            # Schedule ungrab if no fingers remain
+            if self.total_active_fingers == 0 and self.device_grabbed:
+                self._schedule_ungrab()
+
     def _process_event(self, event):
         """Process an input event through all gesture recognizers"""
+        # Update finger count tracking
+        self._update_finger_count(event)
+        
         for gesture in self.gestures:
             if self.verbose:
                 logging.debug(f"Processing event for {gesture.__class__.__name__}")
@@ -162,4 +227,9 @@ class InputListener:
         """Handle gesture detection callback"""
         if self.verbose:
             logging.debug(f"Gesture callback received for action: {action_name}")
+        
+        # Grab devices to prevent interference
+        self._grab_devices()
+        
+        # Trigger the action
         self._trigger_action(action_name) 
