@@ -57,7 +57,12 @@ class HoldGesture(Gesture):
                     self.reset()
                     return False
 
-        return self.is_active
+        # Return True if the gesture is active and we haven't triggered the action yet
+        if self.is_active:
+            self.is_active = False  # Reset the active state so we don't trigger multiple times
+            return True
+
+        return False
 
     def reset(self):
         super().reset()
