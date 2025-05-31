@@ -37,10 +37,6 @@ class HoldGesture(Gesture):
                     self.log_detection(duration=f"{hold_time:.2f}s", fingers=self.current_fingers)
                     self.is_active = True
                     logging.debug(f"{self.name} - Gesture active, will trigger action: {self.action}")
-                    # Trigger the action directly
-                    if self.action:
-                        logging.debug(f"{self.name} - Triggering action: {self.action}")
-                        self.trigger_action()
                     return True
         return False
 
