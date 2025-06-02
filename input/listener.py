@@ -7,6 +7,7 @@ from gestures.hold import HoldGesture
 from gestures.pinch import PinchGesture
 from utils.logging_utils import setup_logging
 from utils.device_utils import find_device_by_name, find_device_by_id
+import threading
 
 class InputListener:
     def __init__(self, config_path: str, verbose: bool = False):
@@ -127,7 +128,6 @@ class InputListener:
 
     def _schedule_ungrab(self, delay=0.1):
         """Schedule device ungrab after a short delay"""
-        import threading
         self._cancel_ungrab_timer()
         self.grab_timeout_timer = threading.Timer(delay, self._ungrab_devices)
         self.grab_timeout_timer.start()
@@ -172,8 +172,6 @@ class InputListener:
                     logging.debug(f"Gesture recognized: {gesture.__class__.__name__}")
                     logging.debug(f"Action to trigger: {gesture.action}")
                 self._trigger_action(gesture.action)
-                # Don't reset gesture immediately - let it handle its own lifecycle
-                # gesture.reset() - Removed to prevent interference with finger tracking
 
     def _trigger_action(self, action_name: str):
         """Trigger the configured action"""

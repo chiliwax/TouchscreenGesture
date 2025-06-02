@@ -1,4 +1,5 @@
 import logging
+from systemd.journal import JournalHandler
 import os
 from typing import Optional
 
@@ -13,6 +14,7 @@ def setup_logging(verbose: bool = False, log_file: Optional[str] = None, log_lev
     log_format = '%(asctime)s - %(levelname)s - %(message)s'
     
     handlers = [logging.StreamHandler()]
+    handlers.append(JournalHandler())
     if log_file:
         handlers.append(logging.FileHandler(log_file))
     
